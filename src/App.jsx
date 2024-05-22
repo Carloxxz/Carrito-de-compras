@@ -1,19 +1,32 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Header from "./components/Header"
 import Guitar from "./components/Guitar"
 import { db } from './data/db'
 
 export default function App() {
 
-    // State
-    const [data, setData] = useState(db)
-    const [cart, setCart] = useState([])
+    const inictialCart = () => {
+        const localStorageCart = localStorage.getItem('cart')
+        return localStorageCart ? JSON.parse(localStorageCart) : []
+    }
 
+    // State
+    const [data] = useState(db)
+    const [cart, setCart] = useState(inictialCart)
+
+    const MIN_ITEMS = 1
+    const MAX_ITEMS = 5
+
+    useEffect(() => {
+        localStorage.setItem('cart', JSON.stringify(cart))
+
+    }, [cart])
 
     function addToCart(item) {
         const itemExist = cart.findIndex(guitar => guitar.id === item.id)
 
-        if (itemExist >= 0) {
+        if (itemExist >= MIN_ITEMS) {
+            if (cart[itemExist].quantity >= MAX_ITEMS) return
             const updatedCart = [...cart]
             updatedCart[itemExist].quantity++
             setCart(updatedCart)
@@ -28,12 +41,50 @@ export default function App() {
         setCart(prevCart => prevCart.filter(guitar => guitar.id !== id))
     }
 
+    function increaseQuantity(id) {
+        const updatedCar = cart.map(item => {
+            if (item.id === id && item.quantity < MAX_ITEMS) {
+                return {
+                    ...item,
+                    quantity: item.quantity + 1
+                }
+            }
+            return item
+        })
+
+        setCart(updatedCar)
+    }
+
+    function decreaseQuantity(id) {
+        const updatedCar = cart.map(item => {
+            if (item.id === id && item.quantity > 0) {
+                return {
+                    ...item,
+                    quantity: item.quantity - 1
+                }
+            }
+            return item
+
+        })
+
+        setCart(updatedCar)
+    }
+
+    function cleanCart() {
+        setCart([])
+    }
+
+
+
 
     return (
         <>
             <Header
                 cart={cart}
                 removeFromCart={removeFromCart}
+                increaseQuantity={increaseQuantity}
+                decreaseQuantity={decreaseQuantity}
+                cleanCart={cleanCart}
             />
 
             <main className="container-xl mt-5">
